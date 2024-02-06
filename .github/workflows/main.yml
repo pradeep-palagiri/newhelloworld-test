@@ -1,4 +1,4 @@
-name: CI/CD Workflow
+name: Deploy Java App
  
 on:
   push:
@@ -6,45 +6,23 @@ on:
       - main
  
 jobs:
-  build:
-    runs-on: ubuntu-latest
- 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
- 
-      - name: Build
-        run: |
-          # Your build commands here
- 
   deploy:
-    needs: build
     runs-on: ubuntu-latest
  
     steps:
-      - name: Checkout code
+      - name: Checkout Repository
         uses: actions/checkout@v2
  
-      - name: Deploy
-        run: |
-          # Your deployment commands here
- 
-  approval:
-    needs: deploy
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.event.ref == 'refs/heads/main'
- 
-    steps:
-      - name: Request Approval
-        uses: actions/github-script@v6
+      - name: Set up JDK
+        uses: actions/setup-java@v2
         with:
-          github-token: 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
-          script: |
-const response = await octokit.rest.pulls.createReviewRequest({
-              owner: context.repo.owners,
-              repo: context.repo.repo,
-              pull_number: context.payload.pull_request.number,
-              reviewers: pradeep-palagiri
-            });
+          distribution: 'adopt'
+          java-version: '11'
  
-            console.log(response);
+      - name: Build with Maven
+        run: mvn clean install
+
+      - name: Request Approval
+        uses: tcardlab/approvals-action@v2
+          with:
+     message: 'Approve deployment to production?'
